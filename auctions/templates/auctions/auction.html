@@ -1,0 +1,114 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<div style="border-style: solid; border-width: 1px; margin: 10px; padding: 10px;">
+	<h3>{{auction.title}}</h3>
+	{% if auction.image_url %}
+		<image src="{{ auction.image_url }}" width="300" height="200">
+	{% else %}
+		{% load static %}
+		<image src="{% static 'auctions/no_image_provided.png' %}" width="300" height="200">
+	{% endif %}
+	
+		
+	<p>Description:</p>
+	<p>{{auction.description}}</p>
+
+	{% if auction.bid.all|length == 0 %}
+
+		<h3>Price: ${{ auction.starting_bid|floatformat:2 }}</p>
+		<h5>{{ auction.bid.all|length }} bid(s) so far</h5>
+
+	{% else %}
+				
+		{# Setting a variable in jinja for the highest bid #}
+		{# Got all Bid objects, set a descending order by "ammount" attribute, selected the first object and set it to a variable #}
+
+		{% with max_bid=auction.bid.all|dictsortreversed:"ammount"|first %}
+
+			<h3>Price: ${{ max_bid.ammount|floatformat:2 }}</h3>
+			<h5>{{ auction.bid.all|length }} bid(s) so far</h5>
+
+			{% if max_bid.bidder == current_user %}
+				<h5>Your bid is the highest bid</h5>
+			{% endif %}
+
+			{% if current_user == max_bid.bidder and auction.available == False%}
+				<h5>Congratulations! You have won this acution!</h5>
+			{% endif %}
+
+		{% endwith %}
+
+	{% endif %}
+
+	{% if user.is_authenticated %}
+	{% if auction.available %}
+		<form action="{% url 'auction' auction.pk %}" method="post">
+			{% csrf_token %}
+			<div class="form-group">
+				<input class="form-control" type="text" name="bid" placeholder="Bid">
+			</div>
+			<div class="form-group">
+				<input class="btn btn-primary" type="submit" name="submit_bid" value="Submit">
+			</div>
+		</form>
+	{% endif %}
+	{% endif %}
+
+	<h5>Sold by {{auction.seller}}</h5>
+	<p>Category: {{auction.category}}</p>
+
+	{% if user.is_authenticated %}
+	{% if auction in current_user.watchlist.all %}
+		<form action="{% url 'auction' auction.pk %}" method="post">
+			{% csrf_token %}
+			<input class="btn btn-primary" type="submit" name="add_to_watchlist" value="Remove from Watchlist">
+		</form>
+	{% else %}
+		<form action="{% url 'auction' auction.pk %}" method="post">
+			{% csrf_token %}
+			<div class="form-group">
+				<input class="btn btn-primary" type="submit" name="add_to_watchlist" value="Add to Watchlist">
+			</div>
+		</form>
+	{% endif %}
+	{% endif %}
+
+	{% if current_user == auction.seller and auction.available == True %}
+		<form action="{% url 'auction' auction.pk %}" method="post">
+			{% csrf_token %}
+			<div class="form-group">
+				<input class="btn btn-primary" type="submit" name="close_auction" value="Close Auction">
+			</div>
+		</form>
+	{% elif auction.available == False %}
+		<h5>This Auction is closed!</h5>
+	{% endif %}
+
+	{% if user.is_authenticated %}
+	<form action="{% url 'auction' auction.pk %}" method="post">
+		{% csrf_token %}
+		<div class="form-group">
+			<textarea class="form-control" name="comment_field" placeholder="Add comment here..."></textarea>
+			<input class="btn btn-primary" type="submit" name="submit_comment" value="Add Comment">
+		</div>
+	</form>
+	{% endif %}
+	
+	<h5>Comments:</h5>
+	{% if auction.comment.all|length == 0 %}
+		<p>No comments yet.</p>
+	{% else %}
+		<ul style="list-style-type: none; margin: 0; padding: 0">
+		{% for comment in auction.comment.all %}
+			<div style="border-style: solid; border-width: 1px; margin: 10px; padding: 10px;">
+				<li>
+					<b>{{ comment.user }}</b> 
+					<p>{{ comment.text }}</p>
+				</li>
+			</div>
+		{% endfor %}
+		</ul>
+	{% endif %}
+</div>
+{% endblock %}

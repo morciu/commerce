@@ -1,0 +1,43 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+
+<h2>Watchlist</h2>
+
+{% if watchlist %}
+	<ul style="list-style-type: none; margin: 0; padding: 0;">
+		{% for auction in watchlist %}
+			<a href="{% url 'auction' auction.id %}">
+    		<div style="border-style: solid; border-width: 1px; margin: 10px; padding: 10px;">
+	    		<li>
+		    		{% if auction.image_url %}
+		    			<image src="{{ auction.image_url }}" width="300" height="200">
+		    		{% else %}
+		    			{% load static %}
+		    			<image src="{% static 'auctions/no_image_provided.png' %}" width="300" height="200">
+		    		{% endif %}
+		    		<div style="display: inline-block;">
+			    		<h3>{{auction.title}}</h3>
+			    		<p>Sold by {{auction.seller}}</p>
+			    		<p>{{auction.description}}</p>
+			    		{% if auction.bid.all|length == 0 %}
+				    			<p>Price: ${{ auction.starting_bid|floatformat:2 }}</p>
+				    		{% else %}
+					    		{# Setting a variable in jinja for the highest bid #}
+								{# Got all Bid objects, set a descending order by "ammount" attribute, selected the first object and set it to a variable #}
+
+								{% with max_bid=auction.bid.all|dictsortreversed:"ammount"|first %}
+								<p>Price: ${{ max_bid.ammount|floatformat:2 }}</p>
+								{% endwith %}
+						{% endif %}
+			    	</div>
+	    		</li>
+    		</div>
+    	</a>
+		{% endfor %}
+	</ul>
+{% else %}
+	<p>Not following anything</p>	
+{% endif %}	
+
+{% endblock %}
